@@ -1,3 +1,17 @@
+#include <p33Fxxxx.h>
+//do not change the order of the following 3 definitions
+#define FCY 12800000UL 
+#include <stdio.h>
+#include <libpic30.h>
+#include <uart.h>
+
+#include "lcd.h"
+#include "led.h"
+#include "joystick.h"
+#include "types.h"
+#include "motor.h"
+#include "timer.h"
+
 //Perform any necessary initialization for the touchscreen and associated ADC pins.
 void touch_init(void){
   //set up the I/O pins E1, E2, E3 to be output pins
