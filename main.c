@@ -58,8 +58,70 @@ void init_adc1(){
     //AD1CHS0bits.CH0SA = 0x05;    //set adc to sample joystick y
 }
 
+void init_adc2(){
+    // disable ADC
+    CLEARBIT(AD2CON1bits.ADON);    
+    //Configure AD1CON1
+    SETBIT(AD2CON1bits.AD12B); //set 12b Operation Mode    
+    //CLEARBIT(AD2CON1bits.AD12B); //set 10b Operation Mode for ADC2
+    AD2CON1bits.FORM = 0; //set integer output    
+    AD2CON1bits.SSRC = 0x7; //set automatic conversion    
+    //Configure AD1CON2
+    AD2CON2 = 0; //not using scanning sampling    
+    //Configure AD1CON3
+    CLEARBIT(AD2CON3bits.ADRC); //internal clock source
+    AD2CON3bits.SAMC = 0x1F; //sample-to-conversion clock = 31Tad
+    AD2CON3bits.ADCS = 0x2; //Tad = 3Tcy (Time cycles)
+    
+    //enable ADC
+    SETBIT(AD2CON1bits.ADON);    
+    
+    //AD1CHS0bits.CH0SA = 0x04;    //set adc to sample joystick x
+    //AD1CHS0bits.CH0SA = 0x05;    //set adc to sample joystick y
+}
+
 void __attribute__((__interrupt__)) _T2Interrupt(void){    
     IFS0bits.T2IF = 0;
+}
+
+// implement merge sort and return the median
+unsigned short median(unsigned short *arr, int n) {
+    // Sort the array
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (arr[j] > arr[j + 1]) {
+                unsigned short temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
+        }
+    }
+    
+    // Return the median
+    if (n % 2 == 0) {
+        return (arr[n / 2 - 1] + arr[n / 2]) / 2;
+    } else {
+        return arr[n / 2];
+    }
+}
+
+
+unsigned short calibrate_touchscreen(){
+    unsigned short adc1ress[5] = {0};
+
+    for(int i = 0; i < 5; i++){
+        __delay_ms(100);
+        SETBIT(AD2CON1bits.SAMP);
+        while(!AD2CON1bits.DONE);
+        CLEARBIT(AD2CON1bits.DONE);
+        
+        adc1ress[i] = ADC1BUF0;
+    }
+
+    __delay_ms(500);
+
+    // calculate the median and return it
+    return median(adc1ress, 5);
 }
 
 
@@ -75,233 +137,84 @@ int main(){
     
     // for button 0 digital mode
     SETBIT(AD1PCFGHbits.PCFG20);
+    
+    init_adc2();
 
-    unsigned char prev_counter = 0;
-    unsigned char is_pressed = 0;
-    unsigned char last_time = 0;
-    unsigned char pressed_count = 0;
-    unsigned char released_count = 0;
-    
-    init_adc1();
-    
-    // initialize PIN for joystick X&Y
-    SETBIT(TRISBbits.TRISB4);
-    SETBIT(TRISBbits.TRISB5); // joystick Y
-
-    char curr_text[500] = "";
-    int curr_state = 0;
-    
-    int min_x, max_x, min_y, max_y;
-    double X, Y;
-    min_x = max_x = min_y = max_y = X = 0;
-    
-    lcd_locate(0, 0);
-    lcd_printf("x min: ? ");
-    
-    lcd_locate(0, 1);
-    lcd_printf("x max: ? ");
-    
-    lcd_locate(0, 2);
-    lcd_printf("y min: ? ");
-    
-    lcd_locate(0, 3);
-    lcd_printf("y max: ? ");
-    
     // Move ball to one side of the touchscreen
-    int duty_us = 900;
+    int duty_us = 1500;
     motor_set_duty(0, duty_us);
     motor_set_duty(1, duty_us);
 
-    
+    touch_select_dim(0);
+
+    unsigned short median_x, median_y;
+    median_x = median_y = 0;
     
 	while(1){
 
-        if(prev_counter != counter){
-            if(curr_state == 0){
-                
-                min_x = ADC1BUF0 % 1024;
-                
-                lcd_locate(10,0);
-                lcd_printf(" %d", min_x);
-                __delay_ms(1);
-            }else if(curr_state == 1){
-                
-                max_x = ADC1BUF0 % 1024;
-                
-                lcd_locate(10,1);
-                lcd_printf(" %d", max_x);
-                __delay_ms(1);
-            }else if(curr_state == 2){
-                
-                min_y = ADC1BUF0 % 1024;
-                
-                lcd_locate(10,2);
-                lcd_printf(" %d", min_y);
-                __delay_ms(1);
-            }else if(curr_state == 3){
-                max_y = ADC1BUF0 % 1024;
-                
-                lcd_locate(10,3);
-                lcd_printf(" %d", max_y);
-                __delay_ms(1);
-            }
+        // set minimum for both
+        motor_set_duty(0, 900);
+        motor_set_duty(1, 900);
 
-            curr_state++;
-            prev_counter = counter;
-        }
+        __delay_ms(1000);
+
+        touch_select_dim(1);
+        median_x = calibrate_touchscreen();
         
-        // joystick button code
-		if (JOYSTICK1 == 0)
-        {
-            pressed_count++;
-            
-            if(pressed_count > 40 && is_pressed == 0){
-                counter++;
-                is_pressed = 1;
-                pressed_count = 0;
-            }
-        }
-        else{
-            released_count++;
-            if(released_count > 40){
-                is_pressed = 0;
-                released_count = 0;
-            }
-        }
+        touch_select_dim(2);
+        median_y = calibrate_touchscreen();
         
+        lcd_locate(0, 0);
+        lcd_printf("C1:\t X: %d,\t Y: %d", median_x, median_y);
         
-        if(curr_state == 0){
-            // sampling min x
-            AD1CHS0bits.CH0SA = 0x04;
-            SETBIT(AD1CON1bits.SAMP);
-            while(!AD1CON1bits.DONE);
-            CLEARBIT(AD1CON1bits.DONE);
-            //ADC1BUFO includes the sample
 
-            unsigned short adc1res = ADC1BUF0;
+        // set minimum for both
+        motor_set_duty(0, 900);
+        motor_set_duty(1, 2100);
 
-            lcd_locate(10,0);
-            if(adc1res % 1024 < 1000){
-                lcd_printf(" %d", adc1res % 1024);    
-            }
-            else{
-                lcd_printf("%d", adc1res % 1024);    
-            }
-            __delay_ms(1);
-        }
+        __delay_ms(1000);
+
+        touch_select_dim(1);
+        median_x = calibrate_touchscreen();
         
-        if(curr_state == 1){
-            // sampling min x
-            AD1CHS0bits.CH0SA = 0x04;
-            SETBIT(AD1CON1bits.SAMP);
-            while(!AD1CON1bits.DONE);
-            CLEARBIT(AD1CON1bits.DONE);
-            //ADC1BUFO includes the sample
-
-            unsigned short adc1res = ADC1BUF0;
-
-            lcd_locate(10,1);
-            if(adc1res % 1024 < 1000){
-                lcd_printf(" %d", adc1res % 1024);    
-            }
-            else{
-                lcd_printf("%d", adc1res % 1024);    
-            }
-            __delay_ms(1);
-        }
+        touch_select_dim(2);
+        median_y = calibrate_touchscreen();
         
-        if(curr_state == 2){
-            AD1CHS0bits.CH0SA = 0x05;
-            // sampling min y
-            SETBIT(AD1CON1bits.SAMP);
-            while(!AD1CON1bits.DONE);
-            CLEARBIT(AD1CON1bits.DONE);
-            //ADC1BUFO includes the sample
+        lcd_locate(0, 1);
+        lcd_printf("C2:\t X: %d,\t Y: %d", median_x, median_y);
 
-            unsigned short adc2res = ADC1BUF0;
-
-            lcd_locate(10,2);
-            if(adc2res % 1024 < 1000){
-                lcd_printf(" %d", adc2res % 1024);    
-            }
-            else{
-                lcd_printf("%d", adc2res % 1024);    
-            }
-            __delay_ms(1);
-        }
         
-        if(curr_state == 3){
-            AD1CHS0bits.CH0SA = 0x05;
-            // sampling max y
-            SETBIT(AD1CON1bits.SAMP);
-            while(!AD1CON1bits.DONE);
-            CLEARBIT(AD1CON1bits.DONE);
-            //ADC1BUFO includes the sample
+        // set minimum for both
+        motor_set_duty(0, 2100);
+        motor_set_duty(1, 900);
 
-            unsigned short adc2res = ADC1BUF0; 
-                
-            lcd_locate(10,3);
-            if(adc2res % 1024 < 1000){
-                lcd_printf(" %d", adc2res % 1024);    
-            }
-            else{
-                lcd_printf("%d", adc2res % 1024);    
-            }
-            __delay_ms(1);
-        }
-        
-        
-        if(curr_state == 4){
-            AD1CHS0bits.CH0SA = 0x04;
-            SETBIT(AD1CON1bits.SAMP);
-            while(!AD1CON1bits.DONE);
-            CLEARBIT(AD1CON1bits.DONE);
-            
-            int interval = max_x - min_x;
-            int ADC1BUF0_mod = ADC1BUF0 % 1024;
-            
-            X = ADC1BUF0_mod - min_x;
-            if(X < 0){
-                X = 0;
-            }
-            uint16_t X_new = 900 + (X / interval) * 1200;
-            
-            uint16_t diff = 2100 - X_new;
-            X_new = 900 + diff;
-            
-            lcd_locate(0,5);
-            lcd_printf("X: %d", X_new); 
-            
+        __delay_ms(1000);
 
-            motor_set_duty(1, X_new);
-            
-            
-            
-            //__delay_ms(1);
-        }
+        touch_select_dim(1);
+        median_x = calibrate_touchscreen();
         
-        if(curr_state == 5){
-            AD1CHS0bits.CH0SA = 0x05;
-            SETBIT(AD1CON1bits.SAMP);
-            while(!AD1CON1bits.DONE);
-            CLEARBIT(AD1CON1bits.DONE);
-            
-            int interval = max_y - min_y;
-            int ADC2BUF0_mod = ADC1BUF0 % 1024;
-            
-            Y = ADC2BUF0_mod - min_y;
-            if(Y < 0){
-                Y = 0;
-            }
-            uint16_t Y_new = 900 + (Y / interval) * 1200;
-            
-            lcd_locate(0,5);
-            lcd_printf("Y: %d", Y_new); 
-            
+        touch_select_dim(2);
+        median_y = calibrate_touchscreen();
+        
+        lcd_locate(0, 2);
+        lcd_printf("C3:\t X: %d,\t Y: %d", median_x, median_y);
 
-            motor_set_duty(0, Y_new);
-            
-        }      
+
+        // set minimum for both
+        motor_set_duty(0, 2100);
+        motor_set_duty(1, 2100);
+
+        __delay_ms(1000);
+
+        touch_select_dim(1);
+        median_x = calibrate_touchscreen();
+        
+        touch_select_dim(2);
+        median_y = calibrate_touchscreen();
+        
+        lcd_locate(0, 3);
+        lcd_printf("C4:\t X: %d,\t Y: %d", median_x, median_y);
+        
         
 	}
     

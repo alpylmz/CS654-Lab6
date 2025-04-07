@@ -7,19 +7,19 @@ void touch_init(void){
 }
 
 // Configure pins and associated ADC to sample either the x- or y-dimension
-// dimensions == 0 standyby mode
+// dimensions == 0 standby mode
 // dimension == 1 sample x
 // dimenstion == 2 sample y
 void touch_select_dim(uint8_t dimension){
-  if(dimension == 0){
+  if(dimension == 0){ // Standby
     SETBIT(LATEbits.LATE1);
     SETBIT(LATEbits.LATE2);
     SETBIT(LATEbits.LATE3);
-  }else if(dimension == 1){
+  }else if(dimension == 1){ // X
     CLEARBIT(LATEbits.LATE1);
     SETBIT(LATEbits.LATE2);
     SETBIT(LATEbits.LATE3);
-  }else if(dimension == 2){
+  }else if(dimension == 2){ // Y
     SETBIT(LATEbits.LATE1);
     CLEARBIT(LATEbits.LATE2);
     CLEARBIT(LATEbits.LATE3);
