@@ -87,8 +87,9 @@ void __attribute__((__interrupt__)) _T2Interrupt(void){
 // implement merge sort and return the median
 unsigned short median(unsigned short *arr, int n) {
     // Sort the array
-    for (int i = 0; i < n - 1; i++) {
-        for (int j = 0; j < n - i - 1; j++) {
+    int i, j;
+    for (i = 0; i < n - 1; i++) {
+        for (j = 0; j < n - i - 1; j++) {
             if (arr[j] > arr[j + 1]) {
                 unsigned short temp = arr[j];
                 arr[j] = arr[j + 1];
@@ -108,8 +109,8 @@ unsigned short median(unsigned short *arr, int n) {
 
 unsigned short calibrate_touchscreen(){
     unsigned short adc1ress[5] = {0};
-
-    for(int i = 0; i < 5; i++){
+    int i = 0;
+    for(i = 0; i < 5; i++){
         __delay_ms(100);
         SETBIT(AD2CON1bits.SAMP);
         while(!AD2CON1bits.DONE);
@@ -158,9 +159,11 @@ int main(){
 
         __delay_ms(1000);
 
+        AD2CHS0bits.CH0SA = 9;
         touch_select_dim(1);
         median_x = calibrate_touchscreen();
         
+        AD2CHS0bits.CH0SA = 15;
         touch_select_dim(2);
         median_y = calibrate_touchscreen();
         
@@ -174,9 +177,11 @@ int main(){
 
         __delay_ms(1000);
 
+        AD2CHS0bits.CH0SA = 9;
         touch_select_dim(1);
         median_x = calibrate_touchscreen();
         
+        AD2CHS0bits.CH0SA = 15;
         touch_select_dim(2);
         median_y = calibrate_touchscreen();
         
@@ -186,13 +191,15 @@ int main(){
         
         // set minimum for both
         motor_set_duty(0, 2100);
-        motor_set_duty(1, 900);
+        motor_set_duty(1, 2100);
 
         __delay_ms(1000);
 
+        AD2CHS0bits.CH0SA = 9;
         touch_select_dim(1);
         median_x = calibrate_touchscreen();
         
+        AD2CHS0bits.CH0SA = 15;
         touch_select_dim(2);
         median_y = calibrate_touchscreen();
         
@@ -202,13 +209,15 @@ int main(){
 
         // set minimum for both
         motor_set_duty(0, 2100);
-        motor_set_duty(1, 2100);
+        motor_set_duty(1, 900);
 
         __delay_ms(1000);
 
+        AD2CHS0bits.CH0SA = 9;
         touch_select_dim(1);
         median_x = calibrate_touchscreen();
         
+        AD2CHS0bits.CH0SA = 15;
         touch_select_dim(2);
         median_y = calibrate_touchscreen();
         
