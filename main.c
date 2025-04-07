@@ -136,10 +136,10 @@ int main(){
     
     motor_init(0);
     
-    CLEARBIT(AD2PCFGL.PCFG9); // set AN9 as analog
-    CLEARBIT(AD2PCFGH.PCFG15); // set AN15 as analog
+    CLEARBIT(AD1PCFGLbits.PCFG9); // set AN9 as analog
+    CLEARBIT(AD1PCFGLbits.PCFG15); // set AN15 as analog
     
-    init_adc2();
+    init_adc1();
 
     // Move ball to one side of the touchscreen
     int duty_us = 1500;
@@ -161,18 +161,18 @@ int main(){
 
     while(1){
         __delay_ms(100);
-        unsigned short adc2ress = 0;
+        unsigned short adc1ress = 0;
 
         __delay_ms(100);
-        SETBIT(AD2CON1bits.SAMP);
-        while(!AD2CON1bits.DONE);
-        CLEARBIT(AD2CON1bits.DONE);
+        SETBIT(AD1CON1bits.SAMP);
+        while(!AD1CON1bits.DONE);
+        CLEARBIT(AD1CON1bits.DONE);
         
-        adc2ress = ADC2BUF0;
+        adc2ress = ADC1BUF0;
         lcd_locate(0, 6);
-        lcd_printf("ADC2: %d", adc2ress);
+        lcd_printf("ADC1: %d", adc1ress);
         lcd_locate(0, 7);
-        lcd_printf("Buffer: %d", ADC2BUF0);
+        lcd_printf("Buffer: %d", ADC1BUF0);
         __delay_ms(1000);
 
     }
