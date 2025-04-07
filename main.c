@@ -146,6 +146,9 @@ int main(){
     motor_set_duty(0, duty_us);
     motor_set_duty(1, duty_us);
 
+    SETBIT(TRISEbits.TRISE8);
+    SETBIT(AD1PCFGHbits.PCFG20); // digital mode
+
     __delay_ms(1000);
 
     touch_select_dim(0);
@@ -155,7 +158,7 @@ int main(){
 
     touch_select_dim(1);
     __delay_ms(1000);
-    AD2CHS0bits.CH0SA = 0x09; // set to AN9
+    AD1CHS0bits.CH0SA = 0x14; // set to AN20
 
 
 
@@ -168,7 +171,7 @@ int main(){
         while(!AD1CON1bits.DONE);
         CLEARBIT(AD1CON1bits.DONE);
         
-        adc2ress = ADC1BUF0;
+        adc1ress = ADC1BUF0;
         lcd_locate(0, 6);
         lcd_printf("ADC1: %d", adc1ress);
         lcd_locate(0, 7);
