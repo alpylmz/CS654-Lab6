@@ -114,6 +114,9 @@ unsigned short calibrate_touchscreen(){
         CLEARBIT(AD2CON1bits.DONE);
         
         adc2ress[i] = ADC2BUF0;
+        lcd_locate(0, 6);
+        lcd_printf("ADC2: %d", adc2ress[i]);
+        __delay_ms(1000);
     }
 
     __delay_ms(400);
