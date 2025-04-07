@@ -143,8 +143,14 @@ int main(){
     motor_set_duty(0, duty_us);
     motor_set_duty(1, duty_us);
 
-    SETBIT(TRISEbits.TRISE8);
+    SETBIT(TRISBbits.TRISB9);
     SETBIT(AD1PCFGHbits.PCFG20); // digital mode
+    // for x touchscreen
+    SETBIT(TRISBbits.TRISB15);
+    CLEARBIT(AD1PCFGLbits.PCFG15);   
+    
+    CLEARBIT(AD1PCFGLbits.PCFG9);
+
 
     __delay_ms(1000);
 
@@ -155,7 +161,8 @@ int main(){
 
     touch_select_dim(1);
     __delay_ms(1000);
-    AD1CHS0bits.CH0SA = 0x14; // set to AN20
+    // works for joystic x AD1CHS0bits.CH0SA = 0x04; // set to AN20
+    AD1CHS0bits.CH0SA = 0x0F; // set to AN20 
 
 
 
@@ -255,4 +262,3 @@ int main(){
     
     return 0;
 }
-    
