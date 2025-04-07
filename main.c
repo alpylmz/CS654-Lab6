@@ -80,10 +80,6 @@ void init_adc2(){
     //AD1CHS0bits.CH0SA = 0x05;    //set adc to sample joystick y
 }
 
-void __attribute__((__interrupt__)) _T2Interrupt(void){    
-    IFS0bits.T2IF = 0;
-}
-
 // implement merge sort and return the median
 unsigned short median(unsigned short *arr, int n) {
     // Sort the array
