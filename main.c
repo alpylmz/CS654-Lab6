@@ -108,7 +108,7 @@ unsigned short median(unsigned short *arr, int n) {
 
 
 unsigned short calibrate_touchscreen(){
-    unsigned short adc1ress[5] = {0};
+    unsigned short adc2ress[5] = {0};
     int i = 0;
     for(i = 0; i < 5; i++){
         __delay_ms(100);
@@ -116,13 +116,13 @@ unsigned short calibrate_touchscreen(){
         while(!AD2CON1bits.DONE);
         CLEARBIT(AD2CON1bits.DONE);
         
-        adc1ress[i] = ADC1BUF0;
+        adc2ress[i] = ADC2BUF0;
     }
 
     __delay_ms(500);
 
     // calculate the median and return it
-    return median(adc1ress, 5);
+    return median(adc2ress, 5);
 }
 
 
@@ -145,6 +145,8 @@ int main(){
     int duty_us = 1500;
     motor_set_duty(0, duty_us);
     motor_set_duty(1, duty_us);
+
+    __delay_ms(1000);
 
     touch_select_dim(0);
 
