@@ -131,11 +131,13 @@ int main(){
 	__C30_UART=1;	
 	lcd_initialize();
 	lcd_clear();
+
+    touch_init();
     
     motor_init(0);
     
-    // for button 0 digital mode
-    SETBIT(AD1PCFGHbits.PCFG20);
+    //CLEARBIT(AD2PCFGL.PCFG9); // set AN9 as analog
+    //CLEARBIT(AD2PCFGH.PCFG15); // set AN15 as analog
     
     init_adc2();
 
