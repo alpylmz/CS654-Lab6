@@ -146,7 +146,11 @@ int main(){
     motor_set_duty(0, duty_us);
     motor_set_duty(1, duty_us);
 
-    SETBIT(TRISEbits.TRISE8);
+    // Joystick x&y
+    SETBIT(TRISBbits.TRISB4);
+    SETBIT(TRISBbits.TRISB5);
+    
+    
     SETBIT(AD1PCFGHbits.PCFG20); // digital mode
 
     __delay_ms(1000);
@@ -158,7 +162,7 @@ int main(){
 
     touch_select_dim(1);
     __delay_ms(1000);
-    AD1CHS0bits.CH0SA = 0x14; // set to AN20
+    AD1CHS0bits.CH0SA = 0x04; // set to AN20
 
 
 
