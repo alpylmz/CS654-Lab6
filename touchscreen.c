@@ -1,9 +1,9 @@
 //Perform any necessary initialization for the touchscreen and associated ADC pins.
 void touch_init(void){
   //set up the I/O pins E1, E2, E3 to be output pins
-  CLEARBIT(TRISEbits.TRISE1); //I/O pin set to output
-  CLEARBIT(TRISEbits.TRISE2); //I/O pin set to output
-  CLEARBIT(TRISEbits.TRISE3); //I/O pin set to output
+  SETBIT(TRISEbits.TRISE1); //I/O pin set to input
+  SETBIT(TRISEbits.TRISE2); //I/O pin set to input
+  SETBIT(TRISEbits.TRISE3); //I/O pin set to input
 }
 
 // Configure pins and associated ADC to sample either the x- or y-dimension

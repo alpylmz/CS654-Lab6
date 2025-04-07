@@ -130,8 +130,6 @@ int main(){
     
     motor_init(0);
     
-    unsigned char counter = 0;
-    
     // for button 0 digital mode
     SETBIT(AD1PCFGHbits.PCFG20);
     
