@@ -159,11 +159,11 @@ int main(){
 
         __delay_ms(1000);
 
-        AD2CHS0bits.CH0SA = 9;
+        AD2CHS0bits.CH0SA = 0x09;
         touch_select_dim(1);
         median_x = calibrate_touchscreen();
         
-        AD2CHS0bits.CH0SA = 15;
+        AD2CHS0bits.CH0SA = 0x0F;
         touch_select_dim(2);
         median_y = calibrate_touchscreen();
         
@@ -177,11 +177,11 @@ int main(){
 
         __delay_ms(1000);
 
-        AD2CHS0bits.CH0SA = 9;
+        AD2CHS0bits.CH0SA = 0x09;
         touch_select_dim(1);
         median_x = calibrate_touchscreen();
         
-        AD2CHS0bits.CH0SA = 15;
+        AD2CHS0bits.CH0SA = 0x0F;
         touch_select_dim(2);
         median_y = calibrate_touchscreen();
         
@@ -195,11 +195,11 @@ int main(){
 
         __delay_ms(1000);
 
-        AD2CHS0bits.CH0SA = 9;
+        AD2CHS0bits.CH0SA = 0x09;
         touch_select_dim(1);
         median_x = calibrate_touchscreen();
         
-        AD2CHS0bits.CH0SA = 15;
+        AD2CHS0bits.CH0SA = 0x0F;
         touch_select_dim(2);
         median_y = calibrate_touchscreen();
         
@@ -213,11 +213,11 @@ int main(){
 
         __delay_ms(1000);
 
-        AD2CHS0bits.CH0SA = 9;
+        AD2CHS0bits.CH0SA = 0x09;
         touch_select_dim(1);
         median_x = calibrate_touchscreen();
         
-        AD2CHS0bits.CH0SA = 15;
+        AD2CHS0bits.CH0SA = 0x0F;
         touch_select_dim(2);
         median_y = calibrate_touchscreen();
         
