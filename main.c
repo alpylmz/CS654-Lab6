@@ -142,18 +142,8 @@ int main(){
     int duty_us = 1500;
     motor_set_duty(0, duty_us);
     motor_set_duty(1, duty_us);
-    
-    // Joystick x&y
-    SETBIT(TRISBbits.TRISB4);
-    SETBIT(TRISBbits.TRISB5);
-    
-    // Touchscreen x&y
-    touch_init();
 
-    
-    CLEARBIT(AD1PCFGLbits.PCFG9); // set AN9 as analog
-    CLEARBIT(AD1PCFGLbits.PCFG15); // set AN15 as analog
-    
+    SETBIT(TRISEbits.TRISE8);
     SETBIT(AD1PCFGHbits.PCFG20); // digital mode
 
     __delay_ms(1000);
@@ -165,7 +155,7 @@ int main(){
 
     touch_select_dim(1);
     __delay_ms(1000);
-    AD1CHS0bits.CH0SA = 0x09; // set to AN9
+    AD1CHS0bits.CH0SA = 0x14; // set to AN20
 
 
 
