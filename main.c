@@ -136,8 +136,8 @@ int main(){
     
     motor_init(0);
     
-    //CLEARBIT(AD2PCFGL.PCFG9); // set AN9 as analog
-    //CLEARBIT(AD2PCFGH.PCFG15); // set AN15 as analog
+    CLEARBIT(AD2PCFGL.PCFG9); // set AN9 as analog
+    CLEARBIT(AD2PCFGH.PCFG15); // set AN15 as analog
     
     init_adc2();
 
@@ -152,6 +152,30 @@ int main(){
 
     unsigned short median_x, median_y;
     median_x = median_y = 0;
+
+    touch_select_dim(1);
+    __delay_ms(1000);
+    AD2CHS0bits.CH0SA = 0x09; // set to AN9
+
+
+
+    while(1){
+        __delay_ms(100);
+        unsigned short adc2ress = 0;
+
+        __delay_ms(100);
+        SETBIT(AD2CON1bits.SAMP);
+        while(!AD2CON1bits.DONE);
+        CLEARBIT(AD2CON1bits.DONE);
+        
+        adc2ress = ADC2BUF0;
+        lcd_locate(0, 6);
+        lcd_printf("ADC2: %d", adc2ress);
+        lcd_locate(0, 7);
+        lcd_printf("Buffer: %d", ADC2BUF0);
+        __delay_ms(1000);
+
+    }
     
 	while(1){
 
