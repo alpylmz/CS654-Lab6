@@ -111,10 +111,15 @@ unsigned short calibrate_touchscreen(){
         SETBIT(AD1CON1bits.SAMP);
         while(!AD1CON1bits.DONE);
         CLEARBIT(AD1CON1bits.DONE);
-        
-        adc1ress[i] = ADC1BUF0 % 4096;
-        lcd_locate(0, 6);
-        lcd_printf("ADC1: %d", adc1ress[i]);
+        if(ADC1BUF0 % 4096 < 1000){
+            adc1ress[i] = ADC1BUF0 % 4096;
+            lcd_locate(0, 6);
+            lcd_printf("ADC1: %d ", adc1ress[i]);
+        }else{
+            adc1ress[i] = ADC1BUF0 % 4096;
+            lcd_locate(0, 6);
+            lcd_printf("ADC1: %d", adc1ress[i]);
+        }
         __delay_ms(100);
     }
 
