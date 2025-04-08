@@ -125,7 +125,7 @@ unsigned short calibrate_touchscreen(){
 }
 
 void wait_motor(){
-    __delay_ms(4000);
+    __delay_ms(2000);
 }
 
 
@@ -159,10 +159,11 @@ int main(){
     SETBIT(TRISBbits.TRISB9); // physical board pin connection look at page 4
     CLEARBIT(AD1PCFGLbits.PCFG9); // sets it to analog mode
     
-    touch_select_dim(0);
+    touch_select_dim(2);
 
     unsigned short median_x, median_y;
     median_x = median_y = 0;
+    
     
     /*
     __delay_ms(1000);
@@ -200,12 +201,12 @@ int main(){
 	while(1){
 
         // set minimum for both
+        AD1CHS0bits.CH0SA = 0x09;
         motor_set_duty(0, 900);
         motor_set_duty(1, 900);
 
         wait_motor();
 
-        AD1CHS0bits.CH0SA = 0x09;
         touch_select_dim(2);
         median_x = calibrate_touchscreen();
         
