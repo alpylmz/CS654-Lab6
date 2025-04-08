@@ -40,7 +40,7 @@ void init_adc1(){
     // disable ADC
     CLEARBIT(AD1CON1bits.ADON);    
     //Configure AD1CON1
-    SETBIT(AD1CON1bits.AD12B); //set 10b Operation Mode    
+    SETBIT(AD1CON1bits.AD12B); //set 12b Operation Mode    
     //CLEARBIT(AD2CON1bits.AD12B); //set 10b Operation Mode for ADC2
     AD1CON1bits.FORM = 0; //set integer output    
     AD1CON1bits.SSRC = 0x7; //set automatic conversion    
@@ -105,24 +105,27 @@ unsigned short median(unsigned short *arr, int n) {
 
 unsigned short calibrate_touchscreen(){
     __delay_ms(100);
-    unsigned short adc2ress[5] = {0};
+    unsigned short adc1ress[5] = {0};
     int i = 0;
     for(i = 0; i < 5; i++){
-        __delay_ms(100);
-        SETBIT(AD2CON1bits.SAMP);
-        while(!AD2CON1bits.DONE);
-        CLEARBIT(AD2CON1bits.DONE);
+        SETBIT(AD1CON1bits.SAMP);
+        while(!AD1CON1bits.DONE);
+        CLEARBIT(AD1CON1bits.DONE);
         
-        adc2ress[i] = ADC2BUF0;
+        adc1ress[i] = ADC1BUF0 % 4096;
         lcd_locate(0, 6);
-        lcd_printf("ADC2: %d", adc2ress[i]);
-        __delay_ms(1000);
+        lcd_printf("ADC1: %d", adc1ress[i]);
+        __delay_ms(100);
     }
 
     __delay_ms(400);
 
     // calculate the median and return it
-    return median(adc2ress, 5);
+    return median(adc1ress, 5);
+}
+
+void wait_motor(){
+    __delay_ms(4000);
 }
 
 
@@ -131,6 +134,8 @@ int main(){
 	__C30_UART=1;	
 	lcd_initialize();
 	lcd_clear();
+    
+    touch_init();
 
     
     motor_init(0);
@@ -147,30 +152,30 @@ int main(){
     //SETBIT(AD1PCFGHbits.PCFG20); // digital mode
     
     // for x touchscreen
-    CLEARBIT(AD1PCFGLbits.PCFG15); // sets it to analog mode
     SETBIT(TRISBbits.TRISB15);
+    CLEARBIT(AD1PCFGLbits.PCFG15); // sets it to analog mode
     
     // for y touchscreen
     SETBIT(TRISBbits.TRISB9); // physical board pin connection look at page 4
     CLEARBIT(AD1PCFGLbits.PCFG9); // sets it to analog mode
     
-    
-
-
-    __delay_ms(1000);
-
     touch_select_dim(0);
 
     unsigned short median_x, median_y;
     median_x = median_y = 0;
-
-    touch_select_dim(2);
+    
+    /*
     __delay_ms(1000);
-    AD1CHS0bits.CH0SA = 0x04; // set to AN20
-    //AD1CHS0bits.CH0SA = 0x09; // set to AN15
 
+    touch_select_dim(0);
 
+    touch_select_dim(1);
+    __delay_ms(1000);
+    //AD1CHS0bits.CH0SA = 0x04; // set to AN20
+    AD1CHS0bits.CH0SA = 0x0F; // set to AN15 
+     
 
+    
     while(1){
         __delay_ms(100);
         unsigned short adc1ress = 0;
@@ -181,13 +186,16 @@ int main(){
         CLEARBIT(AD1CON1bits.DONE);
         
         adc1ress = ADC1BUF0;
+        adc1ress = adc1ress % 4096;
         lcd_locate(0, 6);
         lcd_printf("ADC1: %d", adc1ress);
         lcd_locate(0, 7);
         lcd_printf("Buffer: %d", ADC1BUF0);
         __delay_ms(1000);
+        lcd_clear();
 
     }
+    */
     
 	while(1){
 
@@ -195,14 +203,14 @@ int main(){
         motor_set_duty(0, 900);
         motor_set_duty(1, 900);
 
-        __delay_ms(1000);
+        wait_motor();
 
-        AD2CHS0bits.CH0SA = 0x09;
-        touch_select_dim(1);
+        AD1CHS0bits.CH0SA = 0x09;
+        touch_select_dim(2);
         median_x = calibrate_touchscreen();
         
-        AD2CHS0bits.CH0SA = 0x0F;
-        touch_select_dim(2);
+        AD1CHS0bits.CH0SA = 0x0F;
+        touch_select_dim(1);
         median_y = calibrate_touchscreen();
         
         lcd_locate(0, 0);
@@ -213,14 +221,14 @@ int main(){
         motor_set_duty(0, 900);
         motor_set_duty(1, 2100);
 
-        __delay_ms(1000);
+        wait_motor();
 
-        AD2CHS0bits.CH0SA = 0x09;
-        touch_select_dim(1);
+        AD1CHS0bits.CH0SA = 0x09;
+        touch_select_dim(2);
         median_x = calibrate_touchscreen();
         
-        AD2CHS0bits.CH0SA = 0x0F;
-        touch_select_dim(2);
+        AD1CHS0bits.CH0SA = 0x0F;
+        touch_select_dim(1);
         median_y = calibrate_touchscreen();
         
         lcd_locate(0, 1);
@@ -231,14 +239,14 @@ int main(){
         motor_set_duty(0, 2100);
         motor_set_duty(1, 2100);
 
-        __delay_ms(1000);
+        wait_motor();
 
-        AD2CHS0bits.CH0SA = 0x09;
-        touch_select_dim(1);
+        AD1CHS0bits.CH0SA = 0x09;
+        touch_select_dim(2);
         median_x = calibrate_touchscreen();
         
-        AD2CHS0bits.CH0SA = 0x0F;
-        touch_select_dim(2);
+        AD1CHS0bits.CH0SA = 0x0F;
+        touch_select_dim(1);
         median_y = calibrate_touchscreen();
         
         lcd_locate(0, 2);
@@ -249,14 +257,14 @@ int main(){
         motor_set_duty(0, 2100);
         motor_set_duty(1, 900);
 
-        __delay_ms(1000);
+        wait_motor();
 
-        AD2CHS0bits.CH0SA = 0x09;
-        touch_select_dim(1);
+        AD1CHS0bits.CH0SA = 0x09;
+        touch_select_dim(2);
         median_x = calibrate_touchscreen();
         
-        AD2CHS0bits.CH0SA = 0x0F;
-        touch_select_dim(2);
+        AD1CHS0bits.CH0SA = 0x0F;
+        touch_select_dim(1);
         median_y = calibrate_touchscreen();
         
         lcd_locate(0, 3);
