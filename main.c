@@ -40,7 +40,7 @@ void init_adc1(){
     // disable ADC
     CLEARBIT(AD1CON1bits.ADON);    
     //Configure AD1CON1
-    CLEARBIT(AD1CON1bits.AD12B); //set 10b Operation Mode    
+    SETBIT(AD1CON1bits.AD12B); //set 10b Operation Mode    
     //CLEARBIT(AD2CON1bits.AD12B); //set 10b Operation Mode for ADC2
     AD1CON1bits.FORM = 0; //set integer output    
     AD1CON1bits.SSRC = 0x7; //set automatic conversion    
@@ -143,13 +143,18 @@ int main(){
     motor_set_duty(0, duty_us);
     motor_set_duty(1, duty_us);
 
-    SETBIT(TRISBbits.TRISB9);
-    SETBIT(AD1PCFGHbits.PCFG20); // digital mode
-    // for x touchscreen
-    SETBIT(TRISBbits.TRISB15);
-    CLEARBIT(AD1PCFGLbits.PCFG15);   
+    //SETBIT(TRISBbits.TRISB9);
+    //SETBIT(AD1PCFGHbits.PCFG20); // digital mode
     
-    CLEARBIT(AD1PCFGLbits.PCFG9);
+    // for x touchscreen
+    CLEARBIT(AD1PCFGLbits.PCFG15); // sets it to analog mode
+    SETBIT(TRISBbits.TRISB15);
+    
+    // for y touchscreen
+    SETBIT(TRISBbits.TRISB9); // physical board pin connection look at page 4
+    CLEARBIT(AD1PCFGLbits.PCFG9); // sets it to analog mode
+    
+    
 
 
     __delay_ms(1000);
@@ -159,10 +164,10 @@ int main(){
     unsigned short median_x, median_y;
     median_x = median_y = 0;
 
-    touch_select_dim(1);
+    touch_select_dim(2);
     __delay_ms(1000);
-    // works for joystic x AD1CHS0bits.CH0SA = 0x04; // set to AN20
-    AD1CHS0bits.CH0SA = 0x0F; // set to AN20 
+    AD1CHS0bits.CH0SA = 0x04; // set to AN20
+    //AD1CHS0bits.CH0SA = 0x09; // set to AN15
 
 
 
