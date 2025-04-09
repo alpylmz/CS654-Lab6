@@ -23,6 +23,8 @@
 #include "motor.h"
 #include "timer.h"
 
+#define ARR_LEN 10
+
 
 
 //Initial configuration by EE #include "types.h"
@@ -105,9 +107,9 @@ unsigned short median(unsigned short *arr, int n) {
 
 unsigned short calibrate_touchscreen(){
     __delay_ms(100);
-    unsigned short adc1ress[5] = {0};
+    unsigned short adc1ress[ARR_LEN] = {0};
     int i = 0;
-    for(i = 0; i < 5; i++){
+    for(i = 0; i < ARR_LEN; i++){
         SETBIT(AD1CON1bits.SAMP);
         while(!AD1CON1bits.DONE);
         CLEARBIT(AD1CON1bits.DONE);
@@ -120,17 +122,17 @@ unsigned short calibrate_touchscreen(){
             lcd_locate(0, 6);
             lcd_printf("ADC1: %d", adc1ress[i]);
         }
-        __delay_ms(100);
+        __delay_ms(10);
     }
 
-    __delay_ms(400);
+    //__delay_ms(400);
 
     // calculate the median and return it
-    return median(adc1ress, 5);
+    return median(adc1ress, ARR_LEN);
 }
 
 void wait_motor(){
-    __delay_ms(2000);
+    __delay_ms(5000);
 }
 
 
@@ -220,7 +222,18 @@ int main(){
         median_y = calibrate_touchscreen();
         
         lcd_locate(0, 0);
-        lcd_printf("C1:\t X: %d,\t Y: %d", median_x, median_y);
+        if(median_x < 1000 && median_y < 1000){
+            lcd_printf("C1:\t X:  %d,\t Y:  %d", median_x, median_y);
+        }
+        else if(median_x > 1000 && median_y < 1000){
+            lcd_printf("C1:\t X: %d,\t Y:  %d", median_x, median_y);
+        }
+        else if(median_x < 1000 && median_y > 1000){
+            lcd_printf("C1:\t X:  %d,\t Y: %d", median_x, median_y);
+        }
+        else{
+            lcd_printf("C1:\t X: %d,\t Y: %d", median_x, median_y);
+        }
         
 
         // set minimum for both
@@ -238,7 +251,18 @@ int main(){
         median_y = calibrate_touchscreen();
         
         lcd_locate(0, 1);
-        lcd_printf("C2:\t X: %d,\t Y: %d", median_x, median_y);
+        if(median_x < 1000 && median_y < 1000){
+            lcd_printf("C2:\t X:  %d,\t Y:  %d", median_x, median_y);
+        }
+        else if(median_x > 1000 && median_y < 1000){
+            lcd_printf("C2:\t X: %d,\t Y:  %d", median_x, median_y);
+        }
+        else if(median_x < 1000 && median_y > 1000){
+            lcd_printf("C2:\t X:  %d,\t Y: %d", median_x, median_y);
+        }
+        else{
+            lcd_printf("C2:\t X: %d,\t Y: %d", median_x, median_y);
+        }
 
         
         // set minimum for both
@@ -256,7 +280,18 @@ int main(){
         median_y = calibrate_touchscreen();
         
         lcd_locate(0, 2);
-        lcd_printf("C3:\t X: %d,\t Y: %d", median_x, median_y);
+        if(median_x < 1000 && median_y < 1000){
+            lcd_printf("C3:\t X:  %d,\t Y:  %d", median_x, median_y);
+        }
+        else if(median_x > 1000 && median_y < 1000){
+            lcd_printf("C3:\t X: %d,\t Y:  %d", median_x, median_y);
+        }
+        else if(median_x < 1000 && median_y > 1000){
+            lcd_printf("C3:\t X:  %d,\t Y: %d", median_x, median_y);
+        }
+        else{
+            lcd_printf("C3:\t X: %d,\t Y: %d", median_x, median_y);
+        }
 
 
         // set minimum for both
@@ -274,7 +309,18 @@ int main(){
         median_y = calibrate_touchscreen();
         
         lcd_locate(0, 3);
-        lcd_printf("C4:\t X: %d,\t Y: %d", median_x, median_y);
+        if(median_x < 1000 && median_y < 1000){
+            lcd_printf("C4:\t X:  %d,\t Y:  %d", median_x, median_y);
+        }
+        else if(median_x > 1000 && median_y < 1000){
+            lcd_printf("C4:\t X: %d,\t Y:  %d", median_x, median_y);
+        }
+        else if(median_x < 1000 && median_y > 1000){
+            lcd_printf("C4:\t X:  %d,\t Y: %d", median_x, median_y);
+        }
+        else{
+            lcd_printf("C4:\t X: %d,\t Y: %d", median_x, median_y);
+        }
         
         
 	}
