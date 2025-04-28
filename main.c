@@ -28,7 +28,7 @@
 // FILTER
 //------------------------------------------------------------------------------
 // 3rd Order Butterworth Low-Pass Filter Implementation
-// Fs = 20 Hz, Fc = 2 Hz
+// Fs = 20 Hz, Fc = 15 Hz
 // Coefficients:
 // b = [0.01809895, 0.05429684, 0.05429684, 0.01809895]
 // a = [1.0000    , -1.76004184, 1.18289799, -0.27806111]
@@ -39,8 +39,8 @@ static double butter_x[4] = {0.0, 0.0, 0.0, 0.0}; // Input history: x[n], x[n-1]
 static double butter_y[4] = {0.0, 0.0, 0.0, 0.0}; // Output history: y[n], y[n-1], y[n-2], y[n-3]
 
 // Filter coefficients
-static const double b_coeffs[4] = {0.01809895, 0.05429684, 0.05429684, 0.01809895};
-static const double a_coeffs[3] = {-1.76004184, 1.18289799, -0.27806111}; // a[1], a[2], a[3]
+static const double b_coeffs[4] = {1.0, 3.0, 3.0, 1.0};
+static const double a_coeffs[3] = {4.44e-16, -1.33e-15, -4.44e-16}; // a[1], a[2], a[3]
 
 /**
  * @brief Applies a 3rd order Butterworth low-pass filter to the input value.
@@ -238,7 +238,7 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
 
     // have a p controller
     int duty_us = goal_x - (kp * err_x);
-    double filtered_duty_us = apply_butterworth_filter(duty_us_calculated);
+    double filtered_duty_us = apply_butterworth_filter(duty_us);
     lcd_locate(0, 4);
     lcd_printf("Duty: %d", filtered_duty_us);
 
