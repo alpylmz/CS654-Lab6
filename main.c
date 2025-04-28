@@ -37,20 +37,17 @@ _FWDT(FWDTEN_OFF);
 _FGS(GCP_OFF);  
 
 void enable_timer1(){
-    /* Disable Timer 1 */
-    CLEARBIT(T1CONbits.TON);
-    /* Setup Timer 1 for no interrupts, 50ms period */
-    SETBIT(T1CONbits.TCS);
-    //CLEARBIT(T1CONbits.TGATE);
-    TMR1 = 0x00;
-    T1CONbits.TCKPS = 0b10; // Prescaler 1:64
-    CLEARBIT(IEC0bits.T1IE);
-    CLEARBIT(T1CONbits.TSYNC); // sync
-    CLEARBIT(IFS0bits.T1IF);
-    IPC0bits.T1IP = 0x01; // interupt priority
-    PR1 = 10000; // 50ms period
-    /* Enable Timer 1 */
-    SETBIT(T1CONbits.TON);
+    __builtin_write_OSCCONL(OSCCONL | 2); // What is this? TODO
+    CLEARBIT(T1CONbits.TON); // disable timer
+    SETBIT(T1CONbits.TCS); // select external timer clock
+    CLEARBIT(T1CONbits.TSYNC); // disable synchronization
+    T1CONbits.TCKPS = 0b00; // set it to 1
+    TMR1 = 0x00; // clear timer register
+    PR1 = 32768; // period value
+    IPC0bits.T1IP = 0x01; // set Timer1 Interrupt Priority Level
+    IFS0bits.T1IF = 0; // clear Timer1 Interrupt Flag
+    IEC0bits.T1IE = 0; // Enable timer interrupt
+    T1CONbits.TON = 0; // Start timer
 }
 
 void init_adc1(){
