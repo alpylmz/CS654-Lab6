@@ -42,8 +42,8 @@ static double butter_y[4] = {0.0, 0.0, 0.0, 0.0}; // Input history: x[n], x[n-1]
 static double butter_yout[4] = {0.0, 0.0, 0.0, 0.0}; // Output history: y[n], y[n-1], y[n-2], y[n-3]
 
 // Filter coefficients
-static const double b_coeffs[4] = {1.0, 3.0, 3.0, 1.0};
-static const double a_coeffs[3] = {4.44e-16, -1.33e-15, -4.44e-16}; // a[1], a[2], a[3]
+static const double b_coeffs[4] = {0.03568569, 0.10705706, 0.10705706, 0.03568569};
+static const double a_coeffs[3] = {-1.31972830, 0.78046995, -0.15525615}; // a[1], a[2], a[3]
 
 /**
  * @brief Applies a 3rd order Butterworth low-pass filter to the input value.
@@ -226,6 +226,58 @@ unsigned short read_touchscreen(){
 double prev_x_duty = 0.0;
 double prev_y_duty = 0.0;
 
+// WORKS INDIVIDUALLY
+//double kp = 0.3;
+//double kd = 0.3;
+
+//double kp_y = 0.2;
+//double kd_y = 0.1;
+
+// Not very stable, but it stays when placed in the center
+//double kp = 0.09;
+//double kd = 0.4;
+//double kp_y = 0.06; // needs to be bigger than 0.05
+//double kd_y = 0.6;
+
+// Oscillates the center
+//double kp = 0.1;
+//double kd = 0.5;
+//double kp_y = 0.1; // needs to be bigger than 0.05
+//double kd_y = 0.7;
+
+//double kp = 0.1;
+//double kd = 0.65;
+
+//double kp = 0.08;
+//double kd = 1.3;
+//double kp_y = 0.07; // needs to be bigger than 0.05
+//double kd_y = 1.3;
+
+//double kp = 0.15;
+//double kd = 2.2;
+//double kp_y = 0.1;
+//double kd_y = 2.2;
+
+//double kp = 0.075;
+//double kd = 2.20;
+//double kp_y = 0.075;
+//double kd_y = 2.20;
+
+//double kp = 0.09;
+//double kd = 2;
+//double kp_y = 0.08;
+//double kd_y = 2.2;
+
+int small_switch = 200;
+double kp = 0.2;
+double kd = 2.3;
+double kp_y = 0.2;
+double kd_y = 2.3;
+
+double small_kp = 0.06;
+double small_kd = 0.6;
+double small_kp_y = 0.06;
+double small_kd_y = 0.6;
 
 void __attribute__((__interrupt__)) _T1Interrupt(void){
 
@@ -238,7 +290,7 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     double curr_x_duty;
 
 
-    double goal_duty_x = 1600; // in A11 this is the center
+    double goal_duty_x = 1620; // in A11 this is the center
     
     double duty_cycle_min = 900.0;
     double duty_cycle_max = 2100.0;
@@ -246,6 +298,7 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     // select the x axis
     //touch_select_dim(2);
     int curr_x = read_touchscreen();
+    double doubled_curr_x = apply_butterworth_filter_x((double) curr_x);
     
     // CHOOSE Y EARLY
     touch_select_dim(1);
@@ -253,7 +306,6 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     //lcd_locate(0, 1);
     //lcd_printf("X: %d", curr_x);
     //__delay_ms(10);
-    double doubled_curr_x = curr_x * 1.0;
     lcd_locate(0, 0);
     lcd_printf("X double: %.2f", doubled_curr_x);
     //curr_x_duty = mapValue(doubled_curr_x, minimum_x, maximum_x, duty_cycle_min, duty_cycle_max);
@@ -269,25 +321,31 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     double curr_speed = (curr_x_duty - prev_x_duty);
     prev_x_duty = curr_x_duty;
     
-    double kp = 0.3;
-    double kd = 0.3;
-    // have a p controller
-    //                    P control                 D control
-    int duty_us = goal_duty_x - (kp * err_x) - (kd * curr_speed);
+
+    int duty_us = 0;
+    if(abs(err_x) < small_switch){
+        duty_us = goal_duty_x - (small_kp * err_x) - (small_kd * curr_speed);    
+    }
+    else{
+        // have a p controller
+        //                    P control                 D control
+        duty_us = goal_duty_x - (kp * err_x) - (kd * curr_speed);    
+    }
+    
+    
     double duty_us_doubled = duty_us * 1.0;
     lcd_locate(0, 3);
     lcd_printf("Duty: %.2f", duty_us_doubled);
-    double filtered_duty_us = apply_butterworth_filter_x(duty_us_doubled);
-    lcd_locate(0, 4);
-    lcd_printf("Duty: %.2f", filtered_duty_us);
+    //double filtered_duty_us = apply_butterworth_filter_x(duty_us_doubled);
 
-    if(duty_us < 900){
-        duty_us = 900;
+
+    if(duty_us_doubled < 900){
+        duty_us_doubled = 900;
     }
-    else if(duty_us > 2100){
-        duty_us = 2100;
+    else if(duty_us_doubled > 2100){
+        duty_us_doubled = 2100;
     }
-    motor_set_duty(1, (int)duty_us);
+    motor_set_duty(1, (int)duty_us_doubled);
     
     
     
@@ -303,7 +361,7 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     double curr_y_duty;
 
     
-    double goal_duty_y = 1600; // in A11 this is the center
+    double goal_duty_y = 1620; // in A11 this is the center
     
     //double duty_cycle_min = 900.0;
     //double duty_cycle_max = 2100.0;
@@ -311,6 +369,7 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     // select the y axis
     __delay_ms(10);
     int curr_y = read_touchscreen();
+    double doubled_curr_y = apply_butterworth_filter_y((double) curr_y);
     
     touch_select_dim(2);
     
@@ -319,7 +378,6 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     //lcd_locate(0, 1);
     //lcd_printf("X: %d", curr_x);
     //__delay_ms(10);
-    double doubled_curr_y = curr_y * 1.0;
     //lcd_locate(0, 0);
     //lcd_printf("X double: %.2f", doubled_curr_x);
     //curr_x_duty = mapValue(doubled_curr_x, minimum_x, maximum_x, duty_cycle_min, duty_cycle_max);
@@ -336,28 +394,37 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     double curr_speed_y = (curr_y_duty - prev_y_duty);
     prev_y_duty = curr_y_duty;
     
-    double kp_y = 0.3;
-    double kd_y = 0.3;
+
     // have a p controller
     //                    P control                 D control
     
     
+    int duty_us_y = 0;
+    if(abs(err_y) < small_switch){
+        duty_us_y = goal_duty_y - (small_kp_y * err_y) - (small_kd_y * curr_speed_y);    
+    }
+    else{
+        // have a p controller
+        //                    P control                 D control
+        duty_us_y = goal_duty_y - (kp_y * err_y) - (kd_y * curr_speed_y);   
+    }
     
-    int duty_us_y = goal_duty_y - (kp_y * err_y) - (kd_y * curr_speed_y);
+    
     double duty_us_doubled_y = duty_us_y * 1.0;
     //lcd_locate(0, 3);
     //lcd_printf("Duty: %.2f", duty_us_doubled);
-    double filtered_duty_us_y = apply_butterworth_filter_y(duty_us_doubled_y);
+    //double filtered_duty_us_y = apply_butterworth_filter_y(duty_us_doubled_y);
+    
     //lcd_locate(0, 4);
     //lcd_printf("Duty: %.2f", filtered_duty_us);
     
-    if(duty_us_y < 900){
-        duty_us_y = 900;
+    if(duty_us_doubled_y < 900){
+        duty_us_doubled_y = 900;
     }
-    else if(duty_us_y > 2100){
-        duty_us_y = 2100;
+    else if(duty_us_doubled_y > 2100){
+        duty_us_doubled_y = 2100;
     }
-    motor_set_duty(0, (int)duty_us_y);
+    motor_set_duty(0, (int)duty_us_doubled_y);
     
 
     IFS0bits.T1IF = 0;
@@ -387,232 +454,12 @@ int main(){
     CLEARBIT(AD1PCFGLbits.PCFG9); // sets it to analog mode
 
     
-    /*
-    unsigned short median_x, median_y;
-    median_x = median_y = 0;
-    Point points[4];
-    // START CALIBRATING
-    // set minimum for both
-    AD1CHS0bits.CH0SA = 0x09;
-    motor_set_duty(0, 900);
-    motor_set_duty(1, 900);
-
-    wait_motor();
-
-    touch_select_dim(2);
-    median_x = calibrate_touchscreen();
-    
-    AD1CHS0bits.CH0SA = 0x0F;
-    touch_select_dim(1);
-    median_y = calibrate_touchscreen();
-    points[0].x = median_x;
-    points[0].y = median_y;
-    
-    lcd_locate(0, 0);
-    if(median_x < 1000 && median_y < 1000){
-        lcd_printf("C1:\t X:  %d,\t Y:  %d", median_x, median_y);
-    }
-    else if(median_x > 1000 && median_y < 1000){
-        lcd_printf("C1:\t X: %d,\t Y:  %d", median_x, median_y);
-    }
-    else if(median_x < 1000 && median_y > 1000){
-        lcd_printf("C1:\t X:  %d,\t Y: %d", median_x, median_y);
-    }
-    else{
-        lcd_printf("C1:\t X: %d,\t Y: %d", median_x, median_y);
-    }
-    
-
-    // set minimum for both
-    motor_set_duty(0, 900);
-    motor_set_duty(1, 2100);
-
-    wait_motor();
-
-    AD1CHS0bits.CH0SA = 0x09;
-    touch_select_dim(2);
-    median_x = calibrate_touchscreen();
-    
-    AD1CHS0bits.CH0SA = 0x0F;
-    touch_select_dim(1);
-    median_y = calibrate_touchscreen();
-    points[1].x = median_x;
-    points[1].y = median_y;
-    
-    lcd_locate(0, 1);
-    if(median_x < 1000 && median_y < 1000){
-        lcd_printf("C2:\t X:  %d,\t Y:  %d", median_x, median_y);
-    }
-    else if(median_x > 1000 && median_y < 1000){
-        lcd_printf("C2:\t X: %d,\t Y:  %d", median_x, median_y);
-    }
-    else if(median_x < 1000 && median_y > 1000){
-        lcd_printf("C2:\t X:  %d,\t Y: %d", median_x, median_y);
-    }
-    else{
-        lcd_printf("C2:\t X: %d,\t Y: %d", median_x, median_y);
-    }
-
-    
-    // set minimum for both
-    motor_set_duty(0, 2100);
-    motor_set_duty(1, 2100);
-
-    wait_motor();
-
-    AD1CHS0bits.CH0SA = 0x09;
-    touch_select_dim(2);
-    median_x = calibrate_touchscreen();
-    
-    AD1CHS0bits.CH0SA = 0x0F;
-    touch_select_dim(1);
-    median_y = calibrate_touchscreen();
-    points[2].x = median_x;
-    points[2].y = median_y;
-
-    lcd_locate(0, 2);
-    if(median_x < 1000 && median_y < 1000){
-        lcd_printf("C3:\t X:  %d,\t Y:  %d", median_x, median_y);
-    }
-    else if(median_x > 1000 && median_y < 1000){
-        lcd_printf("C3:\t X: %d,\t Y:  %d", median_x, median_y);
-    }
-    else if(median_x < 1000 && median_y > 1000){
-        lcd_printf("C3:\t X:  %d,\t Y: %d", median_x, median_y);
-    }
-    else{
-        lcd_printf("C3:\t X: %d,\t Y: %d", median_x, median_y);
-    }
-
-
-    // set minimum for both
-    motor_set_duty(0, 2100);
-    motor_set_duty(1, 900);
-
-    wait_motor();
-
-    AD1CHS0bits.CH0SA = 0x09;
-    touch_select_dim(2);
-    median_x = calibrate_touchscreen();
-    
-    AD1CHS0bits.CH0SA = 0x0F;
-    touch_select_dim(1);
-    median_y = calibrate_touchscreen();
-    points[3].x = median_x;
-    points[3].y = median_y;
-    
-    lcd_locate(0, 3);
-    if(median_x < 1000 && median_y < 1000){
-        lcd_printf("C4:\t X:  %d,\t Y:  %d", median_x, median_y);
-    }
-    else if(median_x > 1000 && median_y < 1000){
-        lcd_printf("C4:\t X: %d,\t Y:  %d", median_x, median_y);
-    }
-    else if(median_x < 1000 && median_y > 1000){
-        lcd_printf("C4:\t X:  %d,\t Y: %d", median_x, median_y);
-    }
-    else{
-        lcd_printf("C4:\t X: %d,\t Y: %d", median_x, median_y);
-    }
-    */
-
-    // FINISHED CALIBRATING
-
-    /*
-    // use points array
-    // get the minimum for x and y values over the 4 points
-    int min_x = points[0].x;
-    int min_y = points[0].y;
-    int max_x = points[0].x;
-    int max_y = points[0].y;
-
-    for(i = 1; i < 4; i++){
-        if(points[i].x < min_x){
-            min_x = points[i].x;
-        }
-        if(points[i].y < min_y){
-            min_y = points[i].y;
-        }
-        if(points[i].x > max_x){
-            max_x = points[i].x;
-        }
-        if(points[i].y > max_y){
-            max_y = points[i].y;
-        }
-    }
-    */
-   /*
-    //AD1CHS0bits.CH0SA = 0x0F; / y-axis
-    AD1CHS0bits.CH0SA = 0x09; // x-axis
-    // move y to one side of the touchscreen
-    motor_set_duty(1, 2100);
-    motor_set_duty(0, 2100);
-
-    double minimum_x = 410;
-    double maximum_x = 2540;
-    double goal_x = (minimum_x + maximum_x) / 2;
-    double curr_x_duty;
-
-    goal_x = (2100 + 900) / 2;
-    
-    double duty_cycle_min = 900.0;
-    double duty_cycle_max = 2100.0;
-
-    double kp = 0.1;
-
-    // select the x axis
-    touch_select_dim(2);
-    
-    int i = 0;
-    while(1){
-        i++;
-        if(i == 20){
-            i = 0;
-            lcd_clear();
-        }
-        
-        int curr_x = read_touchscreen();
-        lcd_locate(0, 1);
-        lcd_printf("X: %d", curr_x);
-        __delay_ms(10);
-        double doubled_curr_x = curr_x * 1.0;
-        lcd_locate(0, 6);
-        lcd_printf("X double: %.2f", doubled_curr_x);
-        curr_x_duty = mapValue(doubled_curr_x, minimum_x, maximum_x, duty_cycle_min, duty_cycle_max);
-
-        lcd_locate(0, 2);
-        lcd_printf("Mapped x: %.4f ", curr_x_duty);
-
-        
-        int err_x = curr_x_duty - goal_x;
-        lcd_locate(0, 3);
-        lcd_printf("Error x: %.4f ", err_x);
-
-        // have a p controller
-        int duty_us = goal_x - (kp * err_x);
-        lcd_locate(0, 4);
-        lcd_printf("Duty: %d", duty_us);
-
-        if(duty_us < 900){
-            duty_us = 900;
-        }
-        else if(duty_us > 2100){
-            duty_us = 2100;
-        }
-        motor_set_duty(1, duty_us);
-        __delay_ms(10);
-
-    }
-        */
     enable_timer1();
     touch_select_dim(2);
     while(1){
         __delay_ms(10);
     }
 
-    
-        
-	
     
     return 0;
 }
