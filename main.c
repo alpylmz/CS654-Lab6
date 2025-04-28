@@ -337,6 +337,8 @@ int main(){
     int maximum_x = 2540;
     int goal_x = (minimum_x + maximum_x) / 2;
 
+    goal_x = (2100 + 900) / 2;
+
     int kp = 0.1;
 
     // select the x axis
@@ -347,18 +349,19 @@ int main(){
         lcd_locate(0, 1);
         lcd_printf("X: %d", curr_x);
         __delay_ms(10);
+        curr_x = mapValue(curr_x, minimum_x, maximum_x, 900, 2100);
+
+        lcd_locate(0, 2);
+        lcd_printf("Mapped x: %d", curr_x);
 
         
         int err_x = curr_x - goal_x;
-        lcd_locate(0, 4);
+        lcd_locate(0, 3);
         lcd_printf("Error x: %d", err_x);
 
         // have a p controller
         int duty_us = goal_x - (kp * err_x);
-        lcd_locate(0, 2);
-        lcd_printf("Duty before map: %d", duty_us);
-        duty_us = mapValue(duty_us, minimum_x, maximum_x, 900, 2100);
-        lcd_locate(0, 3);
+        lcd_locate(0, 4);
         lcd_printf("Duty: %d", duty_us);
 
         if(duty_us < 900){
