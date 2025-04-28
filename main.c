@@ -135,6 +135,7 @@ unsigned short read_touchscreen(){
     SETBIT(AD1CON1bits.SAMP);
     while(!AD1CON1bits.DONE);
     CLEARBIT(AD1CON1bits.DONE);
+    __delay_ms(10);
     return ADC1BUF0 % 4096;
 }
 
@@ -155,10 +156,8 @@ int main(){
 	lcd_clear();
     
     touch_init();
-
     
     motor_init(0);
-    
     
     init_adc1();
 
@@ -328,7 +327,8 @@ int main(){
         }
     }
     */
-
+    //AD1CHS0bits.CH0SA = 0x0F; / y-axis
+    AD1CHS0bits.CH0SA = 0x09; // x-axis
     // move y to one side of the touchscreen
     motor_set_duty(1, 2100);
     motor_set_duty(0, 2100);
@@ -348,11 +348,18 @@ int main(){
         lcd_printf("X: %d", curr_x);
         __delay_ms(10);
 
+        
         int err_x = curr_x - goal_x;
+        lcd_locate(0, 4);
+        lcd_printf("Error x: %d", err_x);
 
         // have a p controller
-        duty_us = goal_x + (kp * err_x);
+        int duty_us = goal_x - (kp * err_x);
+        lcd_locate(0, 2);
+        lcd_printf("Duty before map: %d", duty_us);
         duty_us = mapValue(duty_us, minimum_x, maximum_x, 900, 2100);
+        lcd_locate(0, 3);
+        lcd_printf("Duty: %d", duty_us);
 
         if(duty_us < 900){
             duty_us = 900;
@@ -360,9 +367,7 @@ int main(){
         else if(duty_us > 2100){
             duty_us = 2100;
         }
-        motor_set_duty(0, duty_us);
-        lcd_locate(0, 2);
-        lcd_printf("Duty: %d", duty_us);
+        motor_set_duty(1, duty_us);
         __delay_ms(10);
 
     }
