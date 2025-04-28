@@ -131,9 +131,21 @@ unsigned short calibrate_touchscreen(){
     return median(adc1ress, ARR_LEN);
 }
 
+unsigned short read_touchscreen(){
+    SETBIT(AD1CON1bits.SAMP);
+    while(!AD1CON1bits.DONE);
+    CLEARBIT(AD1CON1bits.DONE);
+    return ADC1BUF0 % 4096;
+}
+
 void wait_motor(){
     __delay_ms(5000);
 }
+
+typedef struct Point{
+    unsigned int x;
+    unsigned int y;
+} Point;
 
 
 int main(){
@@ -171,159 +183,201 @@ int main(){
     unsigned short median_x, median_y;
     median_x = median_y = 0;
     
-    
     /*
-    __delay_ms(1000);
+    Point points[4];
+    // START CALIBRATING
+    // set minimum for both
+    AD1CHS0bits.CH0SA = 0x09;
+    motor_set_duty(0, 900);
+    motor_set_duty(1, 900);
 
-    touch_select_dim(0);
+    wait_motor();
 
+    touch_select_dim(2);
+    median_x = calibrate_touchscreen();
+    
+    AD1CHS0bits.CH0SA = 0x0F;
     touch_select_dim(1);
-    __delay_ms(1000);
-    //AD1CHS0bits.CH0SA = 0x04; // set to AN20
-    AD1CHS0bits.CH0SA = 0x0F; // set to AN15 
-     
+    median_y = calibrate_touchscreen();
+    points[0].x = median_x;
+    points[0].y = median_y;
+    
+    lcd_locate(0, 0);
+    if(median_x < 1000 && median_y < 1000){
+        lcd_printf("C1:\t X:  %d,\t Y:  %d", median_x, median_y);
+    }
+    else if(median_x > 1000 && median_y < 1000){
+        lcd_printf("C1:\t X: %d,\t Y:  %d", median_x, median_y);
+    }
+    else if(median_x < 1000 && median_y > 1000){
+        lcd_printf("C1:\t X:  %d,\t Y: %d", median_x, median_y);
+    }
+    else{
+        lcd_printf("C1:\t X: %d,\t Y: %d", median_x, median_y);
+    }
+    
+
+    // set minimum for both
+    motor_set_duty(0, 900);
+    motor_set_duty(1, 2100);
+
+    wait_motor();
+
+    AD1CHS0bits.CH0SA = 0x09;
+    touch_select_dim(2);
+    median_x = calibrate_touchscreen();
+    
+    AD1CHS0bits.CH0SA = 0x0F;
+    touch_select_dim(1);
+    median_y = calibrate_touchscreen();
+    points[1].x = median_x;
+    points[1].y = median_y;
+    
+    lcd_locate(0, 1);
+    if(median_x < 1000 && median_y < 1000){
+        lcd_printf("C2:\t X:  %d,\t Y:  %d", median_x, median_y);
+    }
+    else if(median_x > 1000 && median_y < 1000){
+        lcd_printf("C2:\t X: %d,\t Y:  %d", median_x, median_y);
+    }
+    else if(median_x < 1000 && median_y > 1000){
+        lcd_printf("C2:\t X:  %d,\t Y: %d", median_x, median_y);
+    }
+    else{
+        lcd_printf("C2:\t X: %d,\t Y: %d", median_x, median_y);
+    }
 
     
-    while(1){
-        __delay_ms(100);
-        unsigned short adc1ress = 0;
+    // set minimum for both
+    motor_set_duty(0, 2100);
+    motor_set_duty(1, 2100);
 
-        __delay_ms(100);
-        SETBIT(AD1CON1bits.SAMP);
-        while(!AD1CON1bits.DONE);
-        CLEARBIT(AD1CON1bits.DONE);
-        
-        adc1ress = ADC1BUF0;
-        adc1ress = adc1ress % 4096;
-        lcd_locate(0, 6);
-        lcd_printf("ADC1: %d", adc1ress);
-        lcd_locate(0, 7);
-        lcd_printf("Buffer: %d", ADC1BUF0);
-        __delay_ms(1000);
-        lcd_clear();
+    wait_motor();
 
+    AD1CHS0bits.CH0SA = 0x09;
+    touch_select_dim(2);
+    median_x = calibrate_touchscreen();
+    
+    AD1CHS0bits.CH0SA = 0x0F;
+    touch_select_dim(1);
+    median_y = calibrate_touchscreen();
+    points[2].x = median_x;
+    points[2].y = median_y;
+
+    lcd_locate(0, 2);
+    if(median_x < 1000 && median_y < 1000){
+        lcd_printf("C3:\t X:  %d,\t Y:  %d", median_x, median_y);
+    }
+    else if(median_x > 1000 && median_y < 1000){
+        lcd_printf("C3:\t X: %d,\t Y:  %d", median_x, median_y);
+    }
+    else if(median_x < 1000 && median_y > 1000){
+        lcd_printf("C3:\t X:  %d,\t Y: %d", median_x, median_y);
+    }
+    else{
+        lcd_printf("C3:\t X: %d,\t Y: %d", median_x, median_y);
+    }
+
+
+    // set minimum for both
+    motor_set_duty(0, 2100);
+    motor_set_duty(1, 900);
+
+    wait_motor();
+
+    AD1CHS0bits.CH0SA = 0x09;
+    touch_select_dim(2);
+    median_x = calibrate_touchscreen();
+    
+    AD1CHS0bits.CH0SA = 0x0F;
+    touch_select_dim(1);
+    median_y = calibrate_touchscreen();
+    points[3].x = median_x;
+    points[3].y = median_y;
+    
+    lcd_locate(0, 3);
+    if(median_x < 1000 && median_y < 1000){
+        lcd_printf("C4:\t X:  %d,\t Y:  %d", median_x, median_y);
+    }
+    else if(median_x > 1000 && median_y < 1000){
+        lcd_printf("C4:\t X: %d,\t Y:  %d", median_x, median_y);
+    }
+    else if(median_x < 1000 && median_y > 1000){
+        lcd_printf("C4:\t X:  %d,\t Y: %d", median_x, median_y);
+    }
+    else{
+        lcd_printf("C4:\t X: %d,\t Y: %d", median_x, median_y);
     }
     */
+
+    // FINISHED CALIBRATING
+
+    /*
+    // use points array
+    // get the minimum for x and y values over the 4 points
+    int min_x = points[0].x;
+    int min_y = points[0].y;
+    int max_x = points[0].x;
+    int max_y = points[0].y;
+
+    for(i = 1; i < 4; i++){
+        if(points[i].x < min_x){
+            min_x = points[i].x;
+        }
+        if(points[i].y < min_y){
+            min_y = points[i].y;
+        }
+        if(points[i].x > max_x){
+            max_x = points[i].x;
+        }
+        if(points[i].y > max_y){
+            max_y = points[i].y;
+        }
+    }
+    */
+
+    // move y to one side of the touchscreen
+    touch_select_dim(1);
+    motor_set_duty(1, 900);
+    motor_set_duty(0, 900);
+
+    int minimum_x = 410;
+    int maximum_x = 2540;
+    int goal_x = (minimum_x + maximum_x) / 2;
+
+    int kp = 1;
+
+    // select the x axis
+    touch_select_dim(2);
+
+    while(1){
+        curr_x = read_touchscreen();
+
+        err_x = curr_x - goal_x;
+
+        // have a p controller
+        duty_us = goal_x - (kp * err_x);
+        duty_us = mapValue(duty_us, minimum_x, maximum_x, 900, 2100);
+
+        if(duty_us < 900){
+            duty_us = 900;
+        }
+        else if(duty_us > 2100){
+            duty_us = 2100;
+        }
+        motor_set_duty(0, duty_us);
+
+    }
+
+
+
+
     
-	while(1){
 
-        // set minimum for both
-        AD1CHS0bits.CH0SA = 0x09;
-        motor_set_duty(0, 900);
-        motor_set_duty(1, 900);
-
-        wait_motor();
-
-        touch_select_dim(2);
-        median_x = calibrate_touchscreen();
+    
+    
         
-        AD1CHS0bits.CH0SA = 0x0F;
-        touch_select_dim(1);
-        median_y = calibrate_touchscreen();
-        
-        lcd_locate(0, 0);
-        if(median_x < 1000 && median_y < 1000){
-            lcd_printf("C1:\t X:  %d,\t Y:  %d", median_x, median_y);
-        }
-        else if(median_x > 1000 && median_y < 1000){
-            lcd_printf("C1:\t X: %d,\t Y:  %d", median_x, median_y);
-        }
-        else if(median_x < 1000 && median_y > 1000){
-            lcd_printf("C1:\t X:  %d,\t Y: %d", median_x, median_y);
-        }
-        else{
-            lcd_printf("C1:\t X: %d,\t Y: %d", median_x, median_y);
-        }
-        
-
-        // set minimum for both
-        motor_set_duty(0, 900);
-        motor_set_duty(1, 2100);
-
-        wait_motor();
-
-        AD1CHS0bits.CH0SA = 0x09;
-        touch_select_dim(2);
-        median_x = calibrate_touchscreen();
-        
-        AD1CHS0bits.CH0SA = 0x0F;
-        touch_select_dim(1);
-        median_y = calibrate_touchscreen();
-        
-        lcd_locate(0, 1);
-        if(median_x < 1000 && median_y < 1000){
-            lcd_printf("C2:\t X:  %d,\t Y:  %d", median_x, median_y);
-        }
-        else if(median_x > 1000 && median_y < 1000){
-            lcd_printf("C2:\t X: %d,\t Y:  %d", median_x, median_y);
-        }
-        else if(median_x < 1000 && median_y > 1000){
-            lcd_printf("C2:\t X:  %d,\t Y: %d", median_x, median_y);
-        }
-        else{
-            lcd_printf("C2:\t X: %d,\t Y: %d", median_x, median_y);
-        }
-
-        
-        // set minimum for both
-        motor_set_duty(0, 2100);
-        motor_set_duty(1, 2100);
-
-        wait_motor();
-
-        AD1CHS0bits.CH0SA = 0x09;
-        touch_select_dim(2);
-        median_x = calibrate_touchscreen();
-        
-        AD1CHS0bits.CH0SA = 0x0F;
-        touch_select_dim(1);
-        median_y = calibrate_touchscreen();
-        
-        lcd_locate(0, 2);
-        if(median_x < 1000 && median_y < 1000){
-            lcd_printf("C3:\t X:  %d,\t Y:  %d", median_x, median_y);
-        }
-        else if(median_x > 1000 && median_y < 1000){
-            lcd_printf("C3:\t X: %d,\t Y:  %d", median_x, median_y);
-        }
-        else if(median_x < 1000 && median_y > 1000){
-            lcd_printf("C3:\t X:  %d,\t Y: %d", median_x, median_y);
-        }
-        else{
-            lcd_printf("C3:\t X: %d,\t Y: %d", median_x, median_y);
-        }
-
-
-        // set minimum for both
-        motor_set_duty(0, 2100);
-        motor_set_duty(1, 900);
-
-        wait_motor();
-
-        AD1CHS0bits.CH0SA = 0x09;
-        touch_select_dim(2);
-        median_x = calibrate_touchscreen();
-        
-        AD1CHS0bits.CH0SA = 0x0F;
-        touch_select_dim(1);
-        median_y = calibrate_touchscreen();
-        
-        lcd_locate(0, 3);
-        if(median_x < 1000 && median_y < 1000){
-            lcd_printf("C4:\t X:  %d,\t Y:  %d", median_x, median_y);
-        }
-        else if(median_x > 1000 && median_y < 1000){
-            lcd_printf("C4:\t X: %d,\t Y:  %d", median_x, median_y);
-        }
-        else if(median_x < 1000 && median_y > 1000){
-            lcd_printf("C4:\t X:  %d,\t Y: %d", median_x, median_y);
-        }
-        else{
-            lcd_printf("C4:\t X: %d,\t Y: %d", median_x, median_y);
-        }
-        
-        
-	}
+	
     
     return 0;
 }
