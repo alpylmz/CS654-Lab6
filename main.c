@@ -67,6 +67,9 @@ double apply_butterworth_filter(double input_value) {
                   (b_coeffs[2] * butter_x[2]) + (b_coeffs[3] * butter_x[3]) -
                   (a_coeffs[0] * butter_y[1]) - (a_coeffs[1] * butter_y[2]) - 
                   (a_coeffs[2] * butter_y[3]);
+    
+    lcd_locate(0, 5);
+    lcd_printf("Filter: %.2f ", butter_y[0]);
 
     return butter_y[0];
 }
@@ -208,39 +211,42 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     double curr_x_duty;
 
 
-    goal_x = (2100 + 900) / 2;
+    double goal_duty = (2100 + 900) / 2;
     
     double duty_cycle_min = 900.0;
     double duty_cycle_max = 2100.0;
 
-    double kp = 0.01;
+    double kp = 0.9;
 
     // select the x axis
     touch_select_dim(2);
     
     
     int curr_x = read_touchscreen();
-    lcd_locate(0, 1);
-    lcd_printf("X: %d", curr_x);
+    //lcd_locate(0, 1);
+    //lcd_printf("X: %d", curr_x);
     //__delay_ms(10);
     double doubled_curr_x = curr_x * 1.0;
-    lcd_locate(0, 6);
+    lcd_locate(0, 0);
     lcd_printf("X double: %.2f", doubled_curr_x);
-    curr_x_duty = mapValue(doubled_curr_x, minimum_x, maximum_x, duty_cycle_min, duty_cycle_max);
-
-    lcd_locate(0, 2);
+    //curr_x_duty = mapValue(doubled_curr_x, minimum_x, maximum_x, duty_cycle_min, duty_cycle_max);
+    curr_x_duty = ((doubled_curr_x - minimum_x) * (duty_cycle_max - duty_cycle_min) / (maximum_x - minimum_x)) + duty_cycle_min;
+    
+    lcd_locate(0, 1);
     lcd_printf("Mapped x: %.4f ", curr_x_duty);
 
-    
-    double err_x = curr_x_duty - goal_x;
-    lcd_locate(0, 3);
+    double err_x = curr_x_duty - goal_duty;
+    lcd_locate(0, 2);
     lcd_printf("Error x: %.4f ", err_x);
 
     // have a p controller
-    int duty_us = goal_x - (kp * err_x);
-    double filtered_duty_us = apply_butterworth_filter(duty_us);
+    int duty_us = goal_duty - (kp * err_x);
+    double duty_us_doubled = duty_us * 1.0;
+    lcd_locate(0, 3);
+    lcd_printf("Duty: %.2f", duty_us_doubled);
+    double filtered_duty_us = apply_butterworth_filter(duty_us_doubled);
     lcd_locate(0, 4);
-    lcd_printf("Duty: %d", filtered_duty_us);
+    lcd_printf("Duty: %.2f", filtered_duty_us);
 
     if(duty_us < 900){
         duty_us = 900;
@@ -248,7 +254,7 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     else if(duty_us > 2100){
         duty_us = 2100;
     }
-    motor_set_duty(1, (int)filtered_duty_us);
+    motor_set_duty(1, (int)duty_us);
 
 
     IFS0bits.T1IF = 0;
