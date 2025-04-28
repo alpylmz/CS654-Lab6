@@ -25,6 +25,52 @@
 
 #define ARR_LEN 10
 
+// FILTER
+//------------------------------------------------------------------------------
+// 3rd Order Butterworth Low-Pass Filter Implementation
+// Fs = 20 Hz, Fc = 2 Hz
+// Coefficients:
+// b = [0.01809895, 0.05429684, 0.05429684, 0.01809895]
+// a = [1.0000    , -1.76004184, 1.18289799, -0.27806111]
+//------------------------------------------------------------------------------
+
+// Filter state variables (persistent between calls)
+static double butter_x[4] = {0.0, 0.0, 0.0, 0.0}; // Input history: x[n], x[n-1], x[n-2], x[n-3]
+static double butter_y[4] = {0.0, 0.0, 0.0, 0.0}; // Output history: y[n], y[n-1], y[n-2], y[n-3]
+
+// Filter coefficients
+static const double b_coeffs[4] = {0.01809895, 0.05429684, 0.05429684, 0.01809895};
+static const double a_coeffs[3] = {-1.76004184, 1.18289799, -0.27806111}; // a[1], a[2], a[3]
+
+/**
+ * @brief Applies a 3rd order Butterworth low-pass filter to the input value.
+ * @param input_value The raw input value to be filtered.
+ * @return The filtered output value.
+ */
+double apply_butterworth_filter(double input_value) {
+    // Shift input history
+    butter_x[3] = butter_x[2];
+    butter_x[2] = butter_x[1];
+    butter_x[1] = butter_x[0];
+    butter_x[0] = input_value; // Current input
+
+    // Shift output history
+    butter_y[3] = butter_y[2];
+    butter_y[2] = butter_y[1];
+    butter_y[1] = butter_y[0]; 
+    // butter_y[0] will be calculated now
+
+    // Calculate the new output using the difference equation:
+    // y[n] = b[0]*x[n] + b[1]*x[n-1] + b[2]*x[n-2] + b[3]*x[n-3] 
+    //        - a[1]*y[n-1] - a[2]*y[n-2] - a[3]*y[n-3]
+    butter_y[0] = (b_coeffs[0] * butter_x[0]) + (b_coeffs[1] * butter_x[1]) + 
+                  (b_coeffs[2] * butter_x[2]) + (b_coeffs[3] * butter_x[3]) -
+                  (a_coeffs[0] * butter_y[1]) - (a_coeffs[1] * butter_y[2]) - 
+                  (a_coeffs[2] * butter_y[3]);
+
+    return butter_y[0];
+}
+
 
 //Initial configuration by EE #include "types.h"
 // Primary (XT, HS, EC) Oscillator with PLL
@@ -192,8 +238,9 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
 
     // have a p controller
     int duty_us = goal_x - (kp * err_x);
-    //lcd_locate(0, 4);
-    //lcd_printf("Duty: %d", duty_us);
+    double filtered_duty_us = apply_butterworth_filter(duty_us_calculated);
+    lcd_locate(0, 4);
+    lcd_printf("Duty: %d", filtered_duty_us);
 
     if(duty_us < 900){
         duty_us = 900;
@@ -201,7 +248,7 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     else if(duty_us > 2100){
         duty_us = 2100;
     }
-    motor_set_duty(1, duty_us);
+    motor_set_duty(1, (int)filtered_duty_us);
 
 
     IFS0bits.T1IF = 0;
