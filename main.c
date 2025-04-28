@@ -327,6 +327,7 @@ int main(){
         }
     }
     */
+   /*
     //AD1CHS0bits.CH0SA = 0x0F; / y-axis
     AD1CHS0bits.CH0SA = 0x09; // x-axis
     // move y to one side of the touchscreen
@@ -343,7 +344,7 @@ int main(){
     double duty_cycle_min = 900.0;
     double duty_cycle_max = 2100.0;
 
-    int kp = 0.1;
+    double kp = 0.1;
 
     // select the x axis
     touch_select_dim(2);
@@ -387,6 +388,10 @@ int main(){
         motor_set_duty(1, duty_us);
         __delay_ms(10);
 
+    }
+        */
+    while(1){
+        __delay_ms(100);
     }
 
 
