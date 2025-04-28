@@ -39,15 +39,15 @@ _FGS(GCP_OFF);
 void enable_timer1(){
     __builtin_write_OSCCONL(OSCCONL | 2); // What is this? TODO
     CLEARBIT(T1CONbits.TON); // disable timer
-    SETBIT(T1CONbits.TCS); // select external timer clock
+    CLEARBIT(T1CONbits.TCS); 
     CLEARBIT(T1CONbits.TSYNC); // disable synchronization
-    T1CONbits.TCKPS = 0b00; // set it to 1
+    T1CONbits.TCKPS = 0b10; // set it to 1
     TMR1 = 0x00; // clear timer register
-    PR1 = 32768; // period value
+    PR1 = 10000; // period value
     IPC0bits.T1IP = 0x01; // set Timer1 Interrupt Priority Level
     IFS0bits.T1IF = 0; // clear Timer1 Interrupt Flag
-    IEC0bits.T1IE = 0; // Enable timer interrupt
-    T1CONbits.TON = 0; // Start timer
+    IEC0bits.T1IE = 1; // Enable timer interrupt
+    T1CONbits.TON = 1; // Start timer
 }
 
 void init_adc1(){
@@ -147,14 +147,8 @@ unsigned short read_touchscreen(){
     SETBIT(AD1CON1bits.SAMP);
     while(!AD1CON1bits.DONE);
     CLEARBIT(AD1CON1bits.DONE);
-    __delay_ms(10);
     return ADC1BUF0 % 4096;
 }
-
-void wait_motor(){
-    __delay_ms(5000);
-}
-
 
 
 void __attribute__((__interrupt__)) _T1Interrupt(void){
@@ -173,23 +167,23 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     double duty_cycle_min = 900.0;
     double duty_cycle_max = 2100.0;
 
-    double kp = 0.1;
+    double kp = 0.01;
 
     // select the x axis
     touch_select_dim(2);
     
     
     int curr_x = read_touchscreen();
-    //lcd_locate(0, 1);
-    //lcd_printf("X: %d", curr_x);
-    __delay_ms(10);
+    lcd_locate(0, 1);
+    lcd_printf("X: %d", curr_x);
+    //__delay_ms(10);
     double doubled_curr_x = curr_x * 1.0;
-    //lcd_locate(0, 6);
-    //lcd_printf("X double: %.2f", doubled_curr_x);
+    lcd_locate(0, 6);
+    lcd_printf("X double: %.2f", doubled_curr_x);
     curr_x_duty = mapValue(doubled_curr_x, minimum_x, maximum_x, duty_cycle_min, duty_cycle_max);
 
-    //lcd_locate(0, 2);
-    //lcd_printf("Mapped x: %.4f ", curr_x_duty);
+    lcd_locate(0, 2);
+    lcd_printf("Mapped x: %.4f ", curr_x_duty);
 
     
     double err_x = curr_x_duty - goal_x;
@@ -459,12 +453,6 @@ int main(){
         __delay_ms(10);
     }
 
-
-
-
-    
-
-    
     
         
 	
