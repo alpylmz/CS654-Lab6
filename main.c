@@ -274,10 +274,10 @@ double kd = 2.3;
 double kp_y = 0.2;
 double kd_y = 2.3;
 
-double small_kp = 0.06;
-double small_kd = 0.6;
-double small_kp_y = 0.06;
-double small_kd_y = 0.6;
+double small_kp = 0.04;
+double small_kd = 0.7;
+double small_kp_y = 0.04;
+double small_kd_y = 0.9;
 
 void __attribute__((__interrupt__)) _T1Interrupt(void){
 
