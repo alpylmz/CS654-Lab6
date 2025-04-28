@@ -36,7 +36,10 @@
 
 // Filter state variables (persistent between calls)
 static double butter_x[4] = {0.0, 0.0, 0.0, 0.0}; // Input history: x[n], x[n-1], x[n-2], x[n-3]
-static double butter_y[4] = {0.0, 0.0, 0.0, 0.0}; // Output history: y[n], y[n-1], y[n-2], y[n-3]
+static double butter_xout[4] = {0.0, 0.0, 0.0, 0.0}; // Output history: y[n], y[n-1], y[n-2], y[n-3]
+
+static double butter_y[4] = {0.0, 0.0, 0.0, 0.0}; // Input history: x[n], x[n-1], x[n-2], x[n-3]
+static double butter_yout[4] = {0.0, 0.0, 0.0, 0.0}; // Output history: y[n], y[n-1], y[n-2], y[n-3]
 
 // Filter coefficients
 static const double b_coeffs[4] = {1.0, 3.0, 3.0, 1.0};
@@ -47,7 +50,7 @@ static const double a_coeffs[3] = {4.44e-16, -1.33e-15, -4.44e-16}; // a[1], a[2
  * @param input_value The raw input value to be filtered.
  * @return The filtered output value.
  */
-double apply_butterworth_filter(double input_value) {
+double apply_butterworth_filter_x(double input_value) {
     // Shift input history
     butter_x[3] = butter_x[2];
     butter_x[2] = butter_x[1];
@@ -55,23 +58,44 @@ double apply_butterworth_filter(double input_value) {
     butter_x[0] = input_value; // Current input
 
     // Shift output history
-    butter_y[3] = butter_y[2];
-    butter_y[2] = butter_y[1];
-    butter_y[1] = butter_y[0]; 
+    butter_xout[3] = butter_xout[2];
+    butter_xout[2] = butter_xout[1];
+    butter_xout[1] = butter_xout[0]; 
     // butter_y[0] will be calculated now
 
     // Calculate the new output using the difference equation:
     // y[n] = b[0]*x[n] + b[1]*x[n-1] + b[2]*x[n-2] + b[3]*x[n-3] 
     //        - a[1]*y[n-1] - a[2]*y[n-2] - a[3]*y[n-3]
-    butter_y[0] = (b_coeffs[0] * butter_x[0]) + (b_coeffs[1] * butter_x[1]) + 
+    butter_xout[0] = (b_coeffs[0] * butter_x[0]) + (b_coeffs[1] * butter_x[1]) + 
                   (b_coeffs[2] * butter_x[2]) + (b_coeffs[3] * butter_x[3]) -
-                  (a_coeffs[0] * butter_y[1]) - (a_coeffs[1] * butter_y[2]) - 
-                  (a_coeffs[2] * butter_y[3]);
+                  (a_coeffs[0] * butter_xout[1]) - (a_coeffs[1] * butter_xout[2]) - 
+                  (a_coeffs[2] * butter_xout[3]);
     
-    lcd_locate(0, 5);
-    lcd_printf("Filter: %.2f ", butter_y[0]);
+    return butter_xout[0];
+}
 
-    return butter_y[0];
+double apply_butterworth_filter_y(double input_value) {
+    // Shift input history
+    butter_y[3] = butter_y[2];
+    butter_y[2] = butter_y[1];
+    butter_y[1] = butter_y[0];
+    butter_y[0] = input_value; // Current input
+
+    // Shift output history
+    butter_yout[3] = butter_yout[2];
+    butter_yout[2] = butter_yout[1];
+    butter_yout[1] = butter_yout[0]; 
+    // butter_y[0] will be calculated now
+
+    // Calculate the new output using the difference equation:
+    // y[n] = b[0]*x[n] + b[1]*x[n-1] + b[2]*x[n-2] + b[3]*x[n-3] 
+    //        - a[1]*y[n-1] - a[2]*y[n-2] - a[3]*y[n-3]
+    butter_yout[0] = (b_coeffs[0] * butter_y[0]) + (b_coeffs[1] * butter_y[1]) + 
+                  (b_coeffs[2] * butter_y[2]) + (b_coeffs[3] * butter_y[3]) -
+                  (a_coeffs[0] * butter_yout[1]) - (a_coeffs[1] * butter_yout[2]) - 
+                  (a_coeffs[2] * butter_yout[3]);
+    
+    return butter_yout[0];
 }
 
 
@@ -200,6 +224,8 @@ unsigned short read_touchscreen(){
 }
 
 double prev_x_duty = 0.0;
+double prev_y_duty = 0.0;
+
 
 void __attribute__((__interrupt__)) _T1Interrupt(void){
 
@@ -218,10 +244,12 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     double duty_cycle_max = 2100.0;
 
     // select the x axis
-    touch_select_dim(2);
-    
-    
+    //touch_select_dim(2);
     int curr_x = read_touchscreen();
+    
+    // CHOOSE Y EARLY
+    touch_select_dim(1);
+    
     //lcd_locate(0, 1);
     //lcd_printf("X: %d", curr_x);
     //__delay_ms(10);
@@ -249,7 +277,7 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     double duty_us_doubled = duty_us * 1.0;
     lcd_locate(0, 3);
     lcd_printf("Duty: %.2f", duty_us_doubled);
-    double filtered_duty_us = apply_butterworth_filter(duty_us_doubled);
+    double filtered_duty_us = apply_butterworth_filter_x(duty_us_doubled);
     lcd_locate(0, 4);
     lcd_printf("Duty: %.2f", filtered_duty_us);
 
@@ -260,7 +288,77 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
         duty_us = 2100;
     }
     motor_set_duty(1, (int)duty_us);
+    
+    
+    
+    
+    // Y axis!
+    
+    AD1CHS0bits.CH0SA = 0x0F; // y-axis
+    //AD1CHS0bits.CH0SA = 0x09; // x-axis
 
+    double minimum_y = 300;
+    double maximum_y = 3000;
+    double goal_y = (minimum_y + maximum_y) / 2;
+    double curr_y_duty;
+
+    
+    double goal_duty_y = 1600; // in A11 this is the center
+    
+    //double duty_cycle_min = 900.0;
+    //double duty_cycle_max = 2100.0;
+
+    // select the y axis
+    __delay_ms(10);
+    int curr_y = read_touchscreen();
+    
+    touch_select_dim(2);
+    
+    
+    
+    //lcd_locate(0, 1);
+    //lcd_printf("X: %d", curr_x);
+    //__delay_ms(10);
+    double doubled_curr_y = curr_y * 1.0;
+    //lcd_locate(0, 0);
+    //lcd_printf("X double: %.2f", doubled_curr_x);
+    //curr_x_duty = mapValue(doubled_curr_x, minimum_x, maximum_x, duty_cycle_min, duty_cycle_max);
+    curr_y_duty = ((doubled_curr_y - minimum_y) * (duty_cycle_max - duty_cycle_min) / (maximum_y - minimum_y)) + duty_cycle_min;
+    
+    //lcd_locate(0, 1);
+    //lcd_printf("Mapped x: %.4f ", curr_x_duty);
+    
+    
+    double err_y = curr_y_duty - goal_duty_y;
+    //lcd_locate(0, 2);
+    //lcd_printf("Error x: %.4f ", err_x);
+
+    double curr_speed_y = (curr_y_duty - prev_y_duty);
+    prev_y_duty = curr_y_duty;
+    
+    double kp_y = 0.3;
+    double kd_y = 0.3;
+    // have a p controller
+    //                    P control                 D control
+    
+    
+    
+    int duty_us_y = goal_duty_y - (kp_y * err_y) - (kd_y * curr_speed_y);
+    double duty_us_doubled_y = duty_us_y * 1.0;
+    //lcd_locate(0, 3);
+    //lcd_printf("Duty: %.2f", duty_us_doubled);
+    double filtered_duty_us_y = apply_butterworth_filter_y(duty_us_doubled_y);
+    //lcd_locate(0, 4);
+    //lcd_printf("Duty: %.2f", filtered_duty_us);
+    
+    if(duty_us_y < 900){
+        duty_us_y = 900;
+    }
+    else if(duty_us_y > 2100){
+        duty_us_y = 2100;
+    }
+    motor_set_duty(0, (int)duty_us_y);
+    
 
     IFS0bits.T1IF = 0;
 }
@@ -507,6 +605,7 @@ int main(){
     }
         */
     enable_timer1();
+    touch_select_dim(2);
     while(1){
         __delay_ms(10);
     }
