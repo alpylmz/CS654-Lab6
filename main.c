@@ -333,31 +333,45 @@ int main(){
     motor_set_duty(1, 2100);
     motor_set_duty(0, 2100);
 
-    int minimum_x = 410;
-    int maximum_x = 2540;
-    int goal_x = (minimum_x + maximum_x) / 2;
+    double minimum_x = 410;
+    double maximum_x = 2540;
+    double goal_x = (minimum_x + maximum_x) / 2;
+    double curr_x_duty;
 
     goal_x = (2100 + 900) / 2;
+    
+    double duty_cycle_min = 900.0;
+    double duty_cycle_max = 2100.0;
 
     int kp = 0.1;
 
     // select the x axis
     touch_select_dim(2);
-
+    
+    int i = 0;
     while(1){
+        i++;
+        if(i == 20){
+            i = 0;
+            lcd_clear();
+        }
+        
         int curr_x = read_touchscreen();
         lcd_locate(0, 1);
         lcd_printf("X: %d", curr_x);
         __delay_ms(10);
-        curr_x = mapValue(curr_x, minimum_x, maximum_x, 900, 2100);
+        double doubled_curr_x = curr_x * 1.0;
+        lcd_locate(0, 6);
+        lcd_printf("X double: %.2f", doubled_curr_x);
+        curr_x_duty = mapValue(doubled_curr_x, minimum_x, maximum_x, duty_cycle_min, duty_cycle_max);
 
         lcd_locate(0, 2);
-        lcd_printf("Mapped x: %d", curr_x);
+        lcd_printf("Mapped x: %.4f ", curr_x_duty);
 
         
-        int err_x = curr_x - goal_x;
+        int err_x = curr_x_duty - goal_x;
         lcd_locate(0, 3);
-        lcd_printf("Error x: %d", err_x);
+        lcd_printf("Error x: %.4f ", err_x);
 
         // have a p controller
         int duty_us = goal_x - (kp * err_x);
