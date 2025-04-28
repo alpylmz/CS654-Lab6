@@ -161,11 +161,6 @@ int main(){
     
     
     init_adc1();
-    
-    // Move ball to one side of the touchscreen
-    int duty_us = 1500;
-    motor_set_duty(0, duty_us);
-    motor_set_duty(1, duty_us);
 
     //SETBIT(TRISBbits.TRISB9);
     //SETBIT(AD1PCFGHbits.PCFG20); // digital mode
@@ -177,13 +172,11 @@ int main(){
     // for y touchscreen
     SETBIT(TRISBbits.TRISB9); // physical board pin connection look at page 4
     CLEARBIT(AD1PCFGLbits.PCFG9); // sets it to analog mode
-    
-    touch_select_dim(2);
 
-    unsigned short median_x, median_y;
-    median_x = median_y = 0;
     
     /*
+    unsigned short median_x, median_y;
+    median_x = median_y = 0;
     Point points[4];
     // START CALIBRATING
     // set minimum for both
@@ -337,26 +330,28 @@ int main(){
     */
 
     // move y to one side of the touchscreen
-    touch_select_dim(1);
-    motor_set_duty(1, 900);
-    motor_set_duty(0, 900);
+    motor_set_duty(1, 2100);
+    motor_set_duty(0, 2100);
 
     int minimum_x = 410;
     int maximum_x = 2540;
     int goal_x = (minimum_x + maximum_x) / 2;
 
-    int kp = 1;
+    int kp = 0.1;
 
     // select the x axis
     touch_select_dim(2);
 
     while(1){
-        curr_x = read_touchscreen();
+        int curr_x = read_touchscreen();
+        lcd_locate(0, 1);
+        lcd_printf("X: %d", curr_x);
+        __delay_ms(10);
 
-        err_x = curr_x - goal_x;
+        int err_x = curr_x - goal_x;
 
         // have a p controller
-        duty_us = goal_x - (kp * err_x);
+        duty_us = goal_x + (kp * err_x);
         duty_us = mapValue(duty_us, minimum_x, maximum_x, 900, 2100);
 
         if(duty_us < 900){
@@ -366,6 +361,9 @@ int main(){
             duty_us = 2100;
         }
         motor_set_duty(0, duty_us);
+        lcd_locate(0, 2);
+        lcd_printf("Duty: %d", duty_us);
+        __delay_ms(10);
 
     }
 
