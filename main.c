@@ -199,6 +199,7 @@ unsigned short read_touchscreen(){
     return ADC1BUF0 % 4096;
 }
 
+double prev_x_duty = 0.0;
 
 void __attribute__((__interrupt__)) _T1Interrupt(void){
 
@@ -211,12 +212,10 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     double curr_x_duty;
 
 
-    double goal_duty = (2100 + 900) / 2;
+    double goal_duty_x = 1600; // in A11 this is the center
     
     double duty_cycle_min = 900.0;
     double duty_cycle_max = 2100.0;
-
-    double kp = 0.9;
 
     // select the x axis
     touch_select_dim(2);
@@ -235,12 +234,18 @@ void __attribute__((__interrupt__)) _T1Interrupt(void){
     lcd_locate(0, 1);
     lcd_printf("Mapped x: %.4f ", curr_x_duty);
 
-    double err_x = curr_x_duty - goal_duty;
+    double err_x = curr_x_duty - goal_duty_x;
     lcd_locate(0, 2);
     lcd_printf("Error x: %.4f ", err_x);
 
+    double curr_speed = (curr_x_duty - prev_x_duty);
+    prev_x_duty = curr_x_duty;
+    
+    double kp = 0.3;
+    double kd = 0.3;
     // have a p controller
-    int duty_us = goal_duty - (kp * err_x);
+    //                    P control                 D control
+    int duty_us = goal_duty_x - (kp * err_x) - (kd * curr_speed);
     double duty_us_doubled = duty_us * 1.0;
     lcd_locate(0, 3);
     lcd_printf("Duty: %.2f", duty_us_doubled);
